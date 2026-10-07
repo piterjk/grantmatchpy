@@ -1,0 +1,38 @@
+# 첨부 서비스(GRANTMATCHPY_MODE=attach, 127.0.0.1:8311 — health·첨부 내려받기·글자 추출) — /etc/systemd/system/grantmatchpy-attach.service
+# 임베딩 모델·DB 접속은 쓰지 않는다(rank·embed 엔드포인트가 없다). Java 는 첨부 호출을 이 포트(8311)로 보낸다.
+[Unit]
+Description=grantmatchpy attachment service
+After=network-online.target
+
+[Service]
+User=grantmatchpy
+WorkingDirectory=/home/grantmatchpy/work
+# 세 서비스(API·첨부·작업자)가 같은 파일을 쓴다.
+EnvironmentFile=/home/grantmatchpy/.env
+Environment=GRANTMATCHPY_MODE=attach
+Environment=PYTHONPATH=/home/grantmatchpy/app
+Environment=GRANTMATCHPY_PORT=8311
+# 추출 하위 프로세스는 EXTRACT_MEMORY_MB=1024 까지 쓸 수 있고, 서비스 본체 약 100~200MB 를 더해도 아래 1500M 안이다
+# (EXTRACT_CONCURRENCY 를 2 이상으로 두면 하위 프로세스가 겹쳐 넘을 수 있으니 .env 에서 1 로 두기를 권장).
+# 1024MB 를 넘는 파일은 하위 프로세스가 먼저 한도에서 멈추고 "메모리 상한 초과" 로 알린다.
+Environment=EXTRACT_MEMORY_MB=1024
+ExecStart=/home/grantmatchpy/app/.venv/bin/python -m app
+MemoryMax=1500M
+# CPU 1개를 다른 서비스와 나누므로 절반만, 사람이 쓰는 API 보다 낮은 우선순위
+CPUQuota=50%
+Nice=10
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/grantmatchpy/work /home/grantmatchpy/hf-cache
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

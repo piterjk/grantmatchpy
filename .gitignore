@@ -1,0 +1,10 @@
+.venv/
+storage/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+tools/_out/
+
+.models/
+tools/eval/_out/

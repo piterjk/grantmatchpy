@@ -1,0 +1,38 @@
+# grantmatchpy API 전용(GRANTMATCHPY_MODE=api, 127.0.0.1:8310 — health·순위·임베딩) — /etc/systemd/system/grantmatchpy.service
+# 첨부 내려받기·추출은 grantmatchpy-attach.service(8311)로 분리했다 — 추출 하위 프로세스(최대 1024MB)가 이 서비스의 메모리 상한에 걸리지 않게.
+# 순위(/internal/rank)는 벡터 표만 읽고 임베딩 모델을 올리지 않아 메모리가 작다. 상한 300M.
+# 단 /internal/embed 는 같은 프로세스에서 모델을 올릴 수 있다 — 이 서비스에서 /internal/embed 를 쓸 거라면(EMBED_* 설정을 .env 에 둔 채)
+# 모델이 약 550MB 라 300M 로는 모자란다. 그 경우 /internal/embed 는 쓰지 않고(작업자가 임베딩을 맡는다) MemoryMax 를 올리지 않는 것을 권장한다.
+# 어쩔 수 없이 쓰려면 MemoryMax 를 1G 로 올리고 EMBED_MODEL·EMBED_ONNX_FILE·EMBED_THREADS 등 EMBED_* 설정을 둔다(작업자와 같은 값).
+[Unit]
+Description=grantmatchpy API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=grantmatchpy
+WorkingDirectory=/home/grantmatchpy/app
+# GRANTMATCHPY_TOKEN·GRANTMATCHPY_DB_URL 등(권한 600). 세 서비스가 같은 파일을 쓴다.
+EnvironmentFile=/home/grantmatchpy/.env
+Environment=GRANTMATCHPY_MODE=api
+Environment=GRANTMATCHPY_PORT=8310
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/home/grantmatchpy/app/.venv/bin/python -m app
+MemoryMax=300M
+CPUQuota=50%
+Nice=5
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/grantmatchpy/work /home/grantmatchpy/hf-cache
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

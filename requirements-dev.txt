@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==9.1.1
+# 실제 첨부 대조 도구(tools/compare_with_db.py)용, 읽기 전용 SELECT
+psycopg[binary]==3.3.6

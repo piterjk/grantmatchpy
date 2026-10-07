@@ -1,0 +1,8 @@
+# 임베딩 모델 비교 도구(tools/eval)용 — 서비스 실행에는 필요 없다. EMBED_BACKEND=torch 로 돌릴 때도 이 파일을 설치한다.
+# torch 는 CPU 빌드를 쓴다:  pip install -r requirements-eval.txt --extra-index-url https://download.pytorch.org/whl/cpu
+-r requirements.txt
+torch==2.14.1
+sentence-transformers==6.1.0
+transformers==5.18.0
+psutil==7.2.2
+psycopg[binary]==3.3.6

@@ -1,0 +1,38 @@
+# 임베딩 작업자(상시 실행) — /etc/systemd/system/grantmatchpy-embed.service
+# API 서비스(grantmatchpy.service)와 별개 프로세스: 모델을 이 프로세스에서만 올리고, 한 번에 작은 묶음만 처리한다.
+# 서버는 메모리 3.8GB·CPU 1개에 다른 서비스와 함께 돌므로 상한을 둔다.
+[Unit]
+Description=grantmatchpy embedding worker
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=grantmatchpy
+WorkingDirectory=/home/grantmatchpy/app
+# GRANTMATCHPY_DB_URL(필수)·EMBED_*·EMBED_WORKER_* 등. 접속 값은 이 파일(권한 600)에만 두고 저장소에는 넣지 않는다.
+EnvironmentFile=/home/grantmatchpy/.env
+# 모델은 처음 한 번 내려받아 캐시에 둔 뒤 외부 접속 없이 캐시만 쓴다(HF_HOME 은 .env 에서)
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/home/grantmatchpy/app/.venv/bin/python -m app.embed_worker
+# 모델(int8 ONNX)이 최대 약 550MB — 1G 를 넘으면 이 프로세스만 정리한다(다른 서비스를 지킨다)
+MemoryMax=1G
+# CPU 1개를 다른 서비스와 나누므로 절반만. 밤(01~06시)에도 사람이 쓰는 서비스가 우선이다
+CPUQuota=50%
+Nice=10
+# SIGTERM 을 받으면 현재 작업을 마치고 끝낸다 — 한 작업은 수 초라 60초면 충분하다
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/grantmatchpy/work /home/grantmatchpy/hf-cache
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
