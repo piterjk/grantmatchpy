@@ -27,7 +27,7 @@ log = logging.getLogger("grantmatchpy.embed_worker")
 MAX_ATTEMPTS = 3  # 3번 실패하면 FAILED
 REMOVE_LIMIT = 100  # 한 묶음에서 지울 최대 건수
 KST = timezone(timedelta(hours=9))  # 한국은 서머타임이 없어 고정 오프셋이면 충분하다
-KIND_BY_TARGET = {"GRANT": "passage", "MEMBER": "query"}
+KIND_BY_TARGET = {"GRANT": "passage", "MEMBER": "query", "KNOWLEDGE": "passage"}  # 지식 자료 청크는 검색 대상 글(passage)
 
 
 @dataclass

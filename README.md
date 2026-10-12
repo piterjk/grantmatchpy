@@ -76,7 +76,7 @@ $env:HF_HOME = "$PWD\.models"
 | `EMBED_BATCH` | 1 | 한 번에 계산하는 글 수. 작을수록 메모리·패딩 낭비가 적고, 같은 글은 어떤 요청으로 보내도 같은 벡터가 나온다 |
 | `EMBED_MAX_TOKENS` | 512 | 글 하나의 최대 토큰(넘으면 자름) |
 | `HF_HOME` / `HF_HUB_OFFLINE` | — / — | 모델 캐시 폴더(개발은 `./.models`) / 1 이면 외부 접속 없이 캐시만 쓴다. 서버에서는 처음 한 번 내려받은 뒤 1 로 둔다 |
-| `GRANTMATCHPY_DB_URL` | (작업자는 필수) | PostgreSQL(pgvector) 접속 문자열(psycopg). 서비스의 `/internal/rank` 와 작업자가 쓴다. 비면 rank 는 503, 작업자는 시작하지 않는다. 계정은 `embedding_jobs`·`grant_embeddings`·`member_embeddings` 만 읽고 쓰면 된다 |
+| `GRANTMATCHPY_DB_URL` | (작업자는 필수) | PostgreSQL(pgvector) 접속 문자열(psycopg). 서비스의 `/internal/rank` 와 작업자가 쓴다. 비면 rank 는 503, 작업자는 시작하지 않는다. 계정은 `embedding_jobs`·`grant_embeddings`·`member_embeddings`·`knowledge_embeddings` 만 읽고 쓰면 된다 |
 | `EMBED_WORKER_BATCH_DAY` | 4 | 낮에 한 묶음에서 꺼낼 작업 수 |
 | `EMBED_WORKER_BATCH_NIGHT` | 16 | 밤(한국 시간)의 묶음 크기 |
 | `NIGHT_START_HOUR` / `NIGHT_END_HOUR` | 1 / 6 | 밤 시간대(한국 시간, 시작 이상·끝 미만. 시작 > 끝이면 자정을 넘는 구간) |
@@ -88,7 +88,7 @@ $env:HF_HOME = "$PWD\.models"
 
 ## 임베딩 작업자
 
-서비스(API)와 **별개 프로세스**다. Java 가 `embedding_jobs` 에 쌓은 글을 작은 묶음씩 꺼내 벡터로 만들어 `grant_embeddings`·`member_embeddings` 에 저장한다(표 정의: Java 쪽 `V4__embedding_jobs.sql`·`db/vector/V5__embeddings.sql`, 계약: `grantmatch/docs/04_벡터추천_맞춤진단_구현.md`).
+서비스(API)와 **별개 프로세스**다. Java 가 `embedding_jobs` 에 쌓은 글을 작은 묶음씩 꺼내 벡터로 만들어 `grant_embeddings`·`member_embeddings`·`knowledge_embeddings`(지식 자료 청크, 대상 `KNOWLEDGE`)에 저장한다(표 정의: Java 쪽 `V4__embedding_jobs.sql`·`db/vector/V5__embeddings.sql`, 계약: `grantmatch/docs/04_벡터추천_맞춤진단_구현.md`).
 
 ```powershell
 $env:GRANTMATCHPY_DB_URL = "<psycopg 접속 문자열>"      # 필수. 코드·로그·저장소에 넣지 않는다

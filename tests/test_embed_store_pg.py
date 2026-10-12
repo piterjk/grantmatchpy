@@ -43,7 +43,11 @@ def test_upsert_sql_casts_vector_and_targets_each_table():
         assert sql.count("%s") == 5  # (id, hash, model, vector, updated_at)
 
 
-def test_only_three_tables_touched():
+def test_knowledge_target_uses_its_own_vector_table():
+    assert st._VECTOR_TABLES[st.TARGET_KNOWLEDGE] == ("knowledge_embeddings", "chunk_id")
+
+
+def test_only_four_tables_touched():
     allsql = " ".join(
         [st.SQL_CLAIM_PENDING, st.SQL_CLAIM_REMOVE, st.SQL_DELETE_JOB, st.SQL_DONE, st.SQL_FAILED, st.SQL_RANK]
         + [s.format(table=t, col=c) for s in (st.SQL_CURRENT, st.SQL_UPSERT, st.SQL_DELETE_VECTOR) for t, c in st._VECTOR_TABLES.values()]
@@ -96,6 +100,7 @@ create table embedding_jobs (
     constraint embedding_jobs_target_unique unique (target_type, target_id));
 create table grant_embeddings (grant_id bigint primary key, text_hash char(64) not null, model varchar(80) not null, embedding vector(384) not null, updated_at timestamptz(3) not null);
 create table member_embeddings (member_id bigint primary key, text_hash char(64) not null, model varchar(80) not null, embedding vector(384) not null, updated_at timestamptz(3) not null);
+create table knowledge_embeddings (chunk_id bigint primary key, text_hash char(64) not null, model varchar(80) not null, embedding vector(384) not null, updated_at timestamptz(3) not null);
 """
 
 

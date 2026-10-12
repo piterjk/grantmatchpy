@@ -95,6 +95,26 @@ def test_member_intro_first_and_kind_by_target():
     assert ("MEMBER", 7) in store.vectors and ("GRANT", 10) in store.vectors
 
 
+def test_knowledge_chunk_is_embedded_as_passage_and_stored_by_chunk_id():
+    w, store, emb, _ = make()
+    text = "[업종: 제조업]\n제조업 출하액은 2,090조 원이다"
+    store.add_job("KNOWLEDGE", 41, text=text, text_hash="kh")
+    r = w.run_batch()
+    assert r.done == 1 and emb.calls == [([text], "passage")]
+    assert store.vectors[("KNOWLEDGE", 41)][0] == "kh"
+    # 글도 모델도 같으면 다시 만들지 않는다
+    store.add_job("KNOWLEDGE", 41, text="x", text_hash="kh")
+    assert w.run_batch().skipped == 1
+
+
+def test_knowledge_remove_job_deletes_vector():
+    w, store, emb, _ = make()
+    store.put_vector("KNOWLEDGE", 9, [1.0] * VECTOR_DIM)
+    store.add_job("KNOWLEDGE", 9, status="REMOVE")
+    r = w.run_batch()
+    assert r.removed == 1 and ("KNOWLEDGE", 9) not in store.vectors and emb.calls == []
+
+
 def test_stored_vector_uses_job_hash_and_embedder_model():
     w, store, *_ = make()
     store.add_job("GRANT", 1, text_hash="abc")

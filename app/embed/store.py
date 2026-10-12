@@ -2,7 +2,7 @@
 
 - `EmbeddingStore` 는 계약(Protocol)이다. 진짜 구현은 `PgEmbeddingStore`(PostgreSQL 16 + pgvector, psycopg 3),
   시험용 메모리 가짜는 tests/fakes.py. 핵심 로직(worker·rank)은 이 계약에만 기대므로 DB 없이 시험된다.
-- 서비스 계정이 만지는 표는 embedding_jobs · grant_embeddings · member_embeddings **셋뿐**이다(grants·member_grant_profiles 는 읽지 않는다 —
+- 서비스 계정이 만지는 표는 embedding_jobs · grant_embeddings · member_embeddings · knowledge_embeddings **넷뿐**이다(grants·member_grant_profiles·knowledge_chunks 는 읽지 않는다 —
   임베딩할 글은 작업 줄(embedding_jobs.text)에 이미 들어 있고, 순위에 필요한 것은 벡터 표뿐이다).
 - 접속은 환경 변수 GRANTMATCHPY_DB_URL(psycopg 접속 문자열). 접속 값은 로그·오류 글에 남기지 않는다.
 - 벡터는 pgvector 문자열 '[0.1,0.2,…]' 로 넘기고 SQL 에서 ::vector 로 캐스트한다(pgvector-python 패키지 불필요).
@@ -18,11 +18,13 @@ from typing import Callable, Protocol, Sequence
 VECTOR_DIM = 384  # vector(384) — intfloat/multilingual-e5-small
 TARGET_GRANT = "GRANT"
 TARGET_MEMBER = "MEMBER"
+TARGET_KNOWLEDGE = "KNOWLEDGE"  # 지식 자료 청크(계획서 초안 근거) — 대상 번호는 청크 id
 
 # 대상 종류 → (벡터 표, 식별 열). 이 표의 값만 SQL 문장에 들어간다(사용자 입력은 절대 문장에 넣지 않는다).
 _VECTOR_TABLES = {
     TARGET_GRANT: ("grant_embeddings", "grant_id"),
     TARGET_MEMBER: ("member_embeddings", "member_id"),
+    TARGET_KNOWLEDGE: ("knowledge_embeddings", "chunk_id"),
 }
 
 
@@ -37,7 +39,7 @@ class StoreJobError(RuntimeError):
 @dataclass(frozen=True)
 class Job:
     id: int
-    target_type: str  # GRANT | MEMBER
+    target_type: str  # GRANT | MEMBER | KNOWLEDGE
     target_id: int
     text: str
     text_hash: str
